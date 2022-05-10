@@ -1,0 +1,13 @@
+hib_aws_device_name: /dev/sda1
+hib_aws_instance_initiated_shutdown_behavior: stop
+hib_aws_instance_type: m5a.xlarge
+hib_aws_region: us-east-1
+hib_aws_volume_iops: 100
+hib_aws_volume_type: io1
+hib_libvirt_disk_path: /var/lib/libvirt/images
+# unit for hid_libvirt_ram is GiB
+hib_libvirt_ram: 8
+hid_libvirt_qemu_path: /etc/libvirt/qemu
+hib_libvirt_vcpu: 4
+hib_name: rhel85-image-builder
+hib_root_filesystem_size: 10

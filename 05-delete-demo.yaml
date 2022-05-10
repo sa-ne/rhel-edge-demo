@@ -1,0 +1,7 @@
+- name: Delete Demo
+  become: yes
+  hosts: localhost
+  tasks:
+    - name: Delete VMs
+      ansible.builtin.include_role:
+        name: destroy-image-builder-vm

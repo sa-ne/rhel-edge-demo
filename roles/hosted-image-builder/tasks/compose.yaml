@@ -1,0 +1,37 @@
+- name: Assert Variables are Defined
+  ansible.builtin.assert:
+    that:
+      - activation_key is defined
+      - activation_key_org is defined
+      - hib_root_filesystem_size is defined
+
+- name: Generate Access Token for Red Hat API
+  ansible.builtin.uri:
+    body:
+      client_id: rhsm-api
+      grant_type: refresh_token
+      refresh_token: "{{ redhat_api_offline_token }}"
+    body_format: form-urlencoded
+    method: POST
+    url: "{{ redhat_sso_url }}"
+  register: access_token_results
+
+- name: Render Compose Payload
+  ansible.builtin.set_fact:
+    compose_payload: "{{ lookup('template', 'image-builder-payload-libvirt.json.j2') }}"
+
+- name: Debug Variable compose_payload
+  ansible.builtin.debug:
+    var: compose_payload
+    verbosity: 1
+
+- name: Start Compose
+  ansible.builtin.uri:
+    body: "{{ compose_payload | to_json }}"
+    body_format: json
+    headers:
+      Authorization: "Bearer {{ access_token_results.json.access_token }}"
+    method: POST
+    url: "{{ redhat_image_builder_api_url }}/compose"
+    status_code: 201
+  register: compose_results

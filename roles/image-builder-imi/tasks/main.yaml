@@ -1,0 +1,16 @@
+- name: Assert Variables are Defined
+  ansible.builtin.assert:
+    that:
+      - platform is defined
+
+- name: Inventory using KVM
+  ansible.builtin.include_tasks:
+    file: libvirt.yaml
+  when:
+    - platform == "libvirt"
+
+- name: Inventory using AWS
+  ansible.builtin.include_tasks:
+    file: aws.yaml
+  when:
+    - platform == "aws"

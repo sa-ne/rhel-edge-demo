@@ -1,0 +1,20 @@
+- name: Destroy Image Builder VM
+  community.libvirt.virt:
+    name: "{{ hib_name }}"
+    state: destroyed
+  tags:
+    - virt
+
+- name: Delete Image Builder VM
+  community.libvirt.virt:
+    command: undefine
+    name: "{{ hib_name }}"
+  tags:
+    - virt
+
+- name: Delete Image Builder VM Disk
+  ansible.builtin.file:
+    path: "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
+    state: absent
+  tags:
+    - disk

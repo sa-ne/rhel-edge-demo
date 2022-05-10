@@ -1,0 +1,29 @@
+- name: Assert Variables are Defined
+  ansible.builtin.assert:
+    that:
+      - compose_id is defined
+
+- name: Generate Access Token for Red Hat API
+  ansible.builtin.uri:
+    body:
+      client_id: rhsm-api
+      grant_type: refresh_token
+      refresh_token: "{{ redhat_api_offline_token }}"
+    body_format: form-urlencoded
+    method: POST
+    url: "{{ redhat_sso_url }}"
+  register: access_token_results
+
+- name: Wait for Compose Status
+  ansible.builtin.uri:
+    headers:
+      Authorization: "Bearer {{ access_token_results.json.access_token }}"
+    method: GET
+    url: "{{ redhat_image_builder_api_url }}/composes/{{ compose_id }}"
+    status_code: 200
+  delay: 30
+  register: compose_status_results
+  retries: 60
+  until:
+    - (compose_status_results.json.image_status.status | default('')) == "success"
+    - (compose_status_results.json.image_status.upload_status.status | default('')) == "success"

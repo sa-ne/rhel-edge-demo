@@ -1,0 +1,3 @@
+hib_aws_region: us-east-1
+hib_libvirt_lease_file: /var/lib/libvirt/dnsmasq/virbr0.status
+hib_name: rhel85-image-builder

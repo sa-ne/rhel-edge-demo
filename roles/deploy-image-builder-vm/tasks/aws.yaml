@@ -1,0 +1,33 @@
+#- name: Assert AMI is Defined in Compose Results
+#  ansible.builtin.assert:
+#    that:
+#      - compose_status_results.json.image_status.upload_status.options.ami is defined
+#
+#- name: Set AMI
+#  ansible.builtin.set_fact:
+#    hib_aws_ami: "{{ compose_status_results.json.image_status.upload_status.options.ami }}"
+
+- name: Deploy Image Builder in EC2
+  amazon.aws.ec2_instance:
+    ebs_optimized: yes
+    image_id: "{{ hib_aws_ami }}"
+    instance_initiated_shutdown_behavior: "{{ hib_aws_instance_initiated_shutdown_behavior }}"
+    instance_type: "{{ hib_aws_instance_type }}"
+    key_name: "{{ hib_aws_key_name }}"
+    name: "{{ hib_name }}"
+    network:
+      assign_public_ip: yes
+      delete_on_termination: yes
+    region: "{{ hib_aws_region }}"
+    security_group: "{{ hib_aws_security_group_id }}"
+    state: running
+    volumes:
+      - device_name: "{{ hib_aws_device_name }}"
+        ebs:
+          delete_on_termination: yes
+          iops: "{{ hib_aws_volume_iops }}"
+          volume_size: "{{ hib_root_filesystem_size }}"
+          volume_type: "{{ hib_aws_volume_type }}"
+    vpc_subnet_id: "{{ hib_aws_subnet_id }}"
+    tags:
+      DemoName: rhel-edge-demo

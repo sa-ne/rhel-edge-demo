@@ -1,0 +1,56 @@
+- name: Deploy Image Builder Instance
+  become: yes
+  hosts: localhost
+  tasks:
+    - name: Deploy Instance
+      ansible.builtin.include_role:
+        name: deploy-image-builder-vm
+      vars:
+        hib_root_filesystem_size: 25
+        platform: libvirt
+
+    - name: Create IMI
+      ansible.builtin.include_role:
+        name: image-builder-imi
+      vars:
+        platform: libvirt
+        imi_wait_for_host: yes
+
+- name: Configure Image Builder Instance
+  become: yes
+  hosts: "{{ hib_name }}"
+  tasks:
+    - name: Install Packages
+      ansible.builtin.dnf:
+        state: latest
+        name:
+          - osbuild-composer
+          - composer-cli
+          - cockpit-composer
+          - bash-completion
+          - firewalld
+          - genisoimage
+          - httpd
+          - syslinux
+        update_cache: yes
+
+    - name: Enable Cockpit/Composer/Firewalld/Apache
+      ansible.builtin.systemd:
+        state: started
+        enabled: yes
+        name: "{{ item }}"
+      loop:
+        - osbuild-composer.socket
+        - cockpit.socket
+        - httpd.service
+        - firewalld
+
+    - name: Enable Firewall Ports for Cockpit/Composer/Apache
+      ansible.posix.firewalld:
+        permanent: yes
+        immediate: yes
+        service: "{{ item }}"
+        state: enabled
+      loop:
+        - cockpit
+        - http

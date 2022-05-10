@@ -1,0 +1,20 @@
+- name: Query EC2 Instances
+  amazon.aws.ec2_instance_info:
+    filters:
+      instance-state-name:
+        - running
+      "tag:Name": "{{ hib_name }}"
+      "tag:DemoName": "rhel-edge-demo"
+    region: "{{ hib_aws_region }}"
+  register: ec2_instance_info_results
+
+- name: Debug Variable ec2_instance_info_results
+  ansible.builtin.debug:
+    var: ec2_instance_info_results
+    verbosity: 1
+
+- name: Add Image Builder to IMI
+  ansible.builtin.add_host:
+    ansible_ssh_host: "{{ ec2_instance_info_results.instances[0].public_ip_address }}"
+    ansible_ssh_port: "22"
+    name: "{{ hib_name }}"

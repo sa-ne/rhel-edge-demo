@@ -1,0 +1,39 @@
+{
+  "customizations": {
+    "filesystem": [
+      {
+        "min_size": {{ hib_root_filesystem_size * (1024 | pow(3)) | int }},
+        "mountpoint": "/"
+      }
+    ],
+    "packages": [
+      "podman",
+      "osbuild-composer",
+      "composer-cli",
+      "cockpit-composer",
+      "bash-completion",
+      "selinux-policy-targeted", # These packages are here because of
+      "selinux-policy"           # https://github.com/osbuild/osbuild-composer/issues/2125
+    ],
+    "subscription": {
+      "activation-key": "{{ activation_key }}",
+      "base-url": "https://cdn.redhat.com/",
+      "insights": false,
+      "organization": {{ activation_key_org }},
+      "server-url": "subscription.rhsm.redhat.com"
+    }
+  },
+  "distribution": "rhel-85",
+  "image_name": "rhel85-image-builder",
+  "image_requests": [
+    {
+      "architecture": "x86_64",
+      "image_type": "guest-image",
+      "upload_request": {
+        "options": {
+        },
+        "type": "aws.s3"
+      }
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+hib_libvirt_disk_path: /var/lib/libvirt/images
+hib_libvirt_lease_file: /var/lib/libvirt/dnsmasq/virbr0.status

@@ -1,0 +1,23 @@
+- name: Compose Image Builder Instance
+  hosts: localhost
+  tasks:
+    - name: Initiate Compose
+      ansible.builtin.include_role:
+        name: hosted-image-builder
+      vars:
+        action: compose
+        hib_root_filesystem_size: 25
+
+    - name: Wait for Compose to Complete
+      ansible.builtin.include_role:
+        name: hosted-image-builder
+      vars:
+        action: wait
+        compose_id: "{{ compose_results.json.id }}"
+
+    - name: Download Image
+      ansible.builtin.include_role:
+        name: hosted-image-builder
+      vars:
+        action: download
+        compose_id: "{{ compose_results.json.id }}"

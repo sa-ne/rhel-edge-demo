@@ -1,0 +1,22 @@
+- name: Assert action Variable is Defined
+  ansible.builtin.assert:
+    that:
+      - action is defined
+
+- name: Include Compose Tasks
+  ansible.builtin.include_tasks:
+    file: compose.yaml
+  when:
+    - action == "compose"
+
+- name: Inlcude Wait Tasks
+  ansible.builtin.include_tasks:
+    file: wait.yaml
+  when:
+    - action == "wait"
+
+- name: Include Download Tasks
+  ansible.builtin.include_tasks:
+    file: download.yaml
+  when:
+    - action == "download"
