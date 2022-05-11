@@ -10,13 +10,12 @@
       - composer-cli
       - cockpit-composer
       - bash-completion
-      - firewalld
       - genisoimage
       - httpd
       - syslinux
     update_cache: yes
 
-- name: Enable Cockpit/Composer/Firewalld/Apache
+- name: Enable Cockpit/Composer/Apache
   ansible.builtin.systemd:
     state: started
     enabled: yes
@@ -25,15 +24,3 @@
     - osbuild-composer.socket
     - cockpit.socket
     - httpd.service
-    - firewalld
-
-- name: Enable Firewall Ports for Cockpit/Composer/Apache
-  ansible.posix.firewalld:
-    permanent: yes
-    immediate: yes
-    service: "{{ item }}"
-    state: enabled
-  loop:
-    - cockpit
-    - http
-    - https
