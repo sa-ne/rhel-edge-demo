@@ -1,0 +1,24 @@
+- name: Create Temporary Directory
+  ansible.builtin.file:
+    mode: 0700
+    path: "{{ mirror_registry_tmp }}"
+    state: directory
+    recurse: yes
+
+- name: Pull Mirror Registry Package
+  ansible.builtin.get_url:
+    dest: "{{ mirror_registry_tmp }}/{{ mirror_registry_package_name }}"
+    url: "{{ mirror_registry_package_url }}"
+
+- name: Extract Mirror Registry Package
+  ansible.builtin.unarchive:
+    dest: "{{ mirror_registry_tmp }}"
+    remote_src: yes
+    src: "{{ mirror_registry_tmp }}/{{ mirror_registry_package_name }}"
+
+- name: Install Quay
+  ansible.builtin.shell: |
+    {{ mirror_registry_tmp | quote }}/mirror-registry install \
+      --quayHostname $(hostname -f) \
+      --initUser {{ quay_username | quote }} \
+      --initPassword {{ quay_password | quote }} -v

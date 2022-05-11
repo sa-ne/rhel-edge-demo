@@ -1,10 +1,27 @@
-- name: Copy Disk Image
-  ansible.builtin.copy:
-    dest: "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
-    group: root
-    mode: u+rw,g-wx,o-rwx
-    owner: root
-    src: "/tmp/{{ hib_name }}.qcow2"
+# For some reason resizing via HIB doesn't work!?
+
+- name: Create Larger qcow2 Disk
+  ansible.builtin.command:
+    argv:
+      - "qemu-img"
+      - "create"
+      - "-f"
+      - "qcow2"
+      - "-o"
+      - "preallocation=metadata"
+      - "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
+      - "{{ hib_root_filesystem_size }}G"
+  tags:
+    - setup
+
+- name: Resize/Expand
+  ansible.builtin.command:
+    argv:
+      - "virt-resize"
+      - "--expand"
+      - "/dev/sda3"
+      - "/tmp/{{ hib_name }}.qcow2"
+      - "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
   tags:
     - setup
 

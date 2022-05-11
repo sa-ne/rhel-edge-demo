@@ -1,0 +1,15 @@
+name = "default-minimal-install"
+description = "Default Minimal Install with Admin User"
+version = "0.0.1"
+packages = []
+modules = []
+groups = []
+distro = ""
+
+[customizations]
+
+[[customizations.user]]
+name = "admin"
+description = "Admin User"
+password = "$6$8QUXq6K81bYEWCrR$Jccwmh/olRuBk6wEavcAXxc80suyKZ9ZK9oW5YF0ajmHT/36IX4wbiePk4QBSjNlvBHlR/8WjQNuQg9OtPIWv1"
+groups = ["wheel"]
