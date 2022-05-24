@@ -22,10 +22,14 @@ The following use cases are highlighted:
 
 To leverage the automation in this demo you need to bring the following:
 
-RHEL/Fedora KVM host with at least 4 vCPUs and 16GB RAM. We will also need the following packages installed:
+RHEL/Fedora KVM host with at least 4 vCPUs, 16GB RAM and 40G of available storage. We will also need the following packages installed:
 
 * ansible
 * guestfs-tools
+
+### Simple Content Access
+
+You will also need to make sure the Simple content access for Red Hat Subscription Management feature is enable in the customer portal (here)[https://access.redhat.com/management].
 
 ## Prerequisites
 
@@ -46,7 +50,6 @@ Next we will need to create an Ansible vault with some variables:
 |quay_password|Password for the Quay admin account.|
 |quay_username|Username for the Quay admin account.|
 
-
 ### Create Ansible Vault
 
 Most of the variables referenced above contain sensitive data so we will store them in an Ansible Vault. You can create the vault in the `local/` directory at the root of the repository as follows:
@@ -66,3 +69,41 @@ redhat_api_offline_token: |-
 quay_password: s3cr3t
 quay_username: edge
 ```
+
+### Install Required Collections
+
+The playbooks in this repository make use of various Ansible Collections. To install them, run the following command:
+
+```shell
+ansible-galaxy collection install -r collections/requirements.yaml
+```
+
+## Compose and Download Image Builder VM for KVM
+
+This playbook will compose and download a RHEL 8.6 qcow2 image with Image Builder preinstalled. The following default values are used (these can be overwritten on the command line):
+
+```yaml
+hib_name: rhel86-image-builder
+hib_root_filesystem_size: 25
+```
+
+|Variable|Description|
+|:---|:---|
+|hib_name|Name of the compose as well as the name of the deployed Image Builder VM.|
+|hib_root_filesystem_size|Size of the Image Builder VM root filesystem in Gigabytes (GB).|
+
+We will also need to include the variables defined in our vault. To run the playbook, execute the following:
+
+```shell
+ansible-playbook \
+  --ask-vault-pass \
+  -e @local/vault.yaml \
+  -e hib_name=image-builder-demo \
+  -e hib_root_filesystem_size=50 \
+  01-compose-image-builder.yaml
+```
+
+This example overrides the `hib_name` default and changes the value to `image-builder-demo`. It also overrides `hib_root_filesystem_size` to be 50G.
+
+*_NOTE: The compose process takes about 15 minutes to complete._*
+
