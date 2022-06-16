@@ -27,3 +27,29 @@
   until:
     - (compose_status_results.json.image_status.status | default('')) == "success"
     - (compose_status_results.json.image_status.upload_status.status | default('')) == "success"
+
+- name: Set Timestamp Fact
+  ansible.builtin.set_fact:
+    timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+
+- name: Write Compose id to Temporary File
+  ansible.builtin.copy:
+    content: "{{ compose_id }}"
+    dest: "/tmp/{{ hib_name }}-{{ timestamp }}-compose-id"
+
+- name: Debug Compose id
+  ansible.builtin.debug:
+    msg: "Compose id: {{ compose_id }}"
+
+- name: Write AMI id to Temporary File
+  ansible.builtin.copy:
+    content: "{{ compose_status_results.json.image_status.upload_status.options.ami | default('error') }}"
+    dest: "/tmp/{{ hib_name }}-{{ timestamp }}-ami-id"
+  when:
+    - platform == "aws"
+
+- name: Debug AMI id
+  ansible.builtin.debug:
+    msg: "AMI id: {{ compose_status_results.json.image_status.upload_status.options.ami | default('error') }}"
+  when:
+    - platform == "aws"

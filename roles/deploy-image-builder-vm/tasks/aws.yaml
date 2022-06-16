@@ -1,14 +1,47 @@
-#- name: Assert AMI is Defined in Compose Results
-#  ansible.builtin.assert:
-#    that:
-#      - compose_status_results.json.image_status.upload_status.options.ami is defined
-#
-#- name: Set AMI
-#  ansible.builtin.set_fact:
-#    hib_aws_ami: "{{ compose_status_results.json.image_status.upload_status.options.ami }}"
+- name: Assert AMI id is Defined
+  ansible.builtin.assert:
+    that:
+      - hib_aws_ami is defined
+
+- name: Get My IP Address
+  ansible.builtin.uri:
+    return_content: yes
+    url: https://myip.wtf/text
+  register: myip
+
+- name: Debug My IP Address
+  ansible.builtin.debug:
+    msg: "My IP: '{{ myip.content | trim }}'!"
+
+- name: Create Security Group
+  amazon.aws.ec2_group:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    description: "{{ hib_aws_security_group_descrition }}"
+    name: "{{ hib_aws_security_group_name }}"
+    region: "{{ hib_aws_region }}"
+    rules:
+      - proto: all
+        cidr_ip: "{{ myip.content | trim }}/32"
+      - proto: tcp
+        cidr_ip: "0.0.0.0/0"
+        ports:
+          - 80
+          - 443
+          - 8443
+          - 8080
+          - 9090
+    state: present
+    tags:
+      DemoName: rhel-edge-demo
+    vpc_id: "{{ hib_aws_vpc_id }}"
+  become: true
+  register: group_results
 
 - name: Deploy Image Builder in EC2
   amazon.aws.ec2_instance:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
     ebs_optimized: yes
     image_id: "{{ hib_aws_ami }}"
     instance_initiated_shutdown_behavior: "{{ hib_aws_instance_initiated_shutdown_behavior }}"
@@ -19,8 +52,10 @@
       assign_public_ip: yes
       delete_on_termination: yes
     region: "{{ hib_aws_region }}"
-    security_group: "{{ hib_aws_security_group_id }}"
+    security_group: "{{ group_results.group_id }}"
     state: running
+    tags:
+      DemoName: rhel-edge-demo
     volumes:
       - device_name: "{{ hib_aws_device_name }}"
         ebs:
@@ -29,5 +64,3 @@
           volume_size: "{{ hib_root_filesystem_size }}"
           volume_type: "{{ hib_aws_volume_type }}"
     vpc_subnet_id: "{{ hib_aws_subnet_id }}"
-    tags:
-      DemoName: rhel-edge-demo

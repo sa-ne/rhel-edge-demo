@@ -7,24 +7,28 @@
       }
     ],
     "packages": [
-      "podman",
-      "osbuild-composer",
-      "composer-cli",
-      "cockpit-composer",
       "bash-completion",
-      "selinux-policy-targeted", # These packages are here because of
-      "selinux-policy"           # https://github.com/osbuild/osbuild-composer/issues/2125
+      "cockpit-composer",
+      "composer-cli",
+      "genisoimage",
+      "httpd",
+      "osbuild-composer",
+      "podman",
+      "selinux-policy",          # These selinux packages are included because of
+      "selinux-policy-targeted", # https://github.com/osbuild/osbuild-composer/issues/2125
+      "skopeo",
+      "syslinux"
     ],
     "subscription": {
       "activation-key": "{{ activation_key }}",
       "base-url": "https://cdn.redhat.com/",
       "insights": false,
-      "organization": {{ activation_key_org }},
+      "organization": {{ activation_key_org | int }},
       "server-url": "subscription.rhsm.redhat.com"
     }
   },
-  "distribution": "rhel-85",
-  "image_name": "rhel85-image-builder",
+  "distribution": "{{ hib_rhel_distribution }}",
+  "image_name": "{{ hib_name }}",
   "image_requests": [
     {
       "architecture": "x86_64",

@@ -2,19 +2,6 @@
   ansible.builtin.include_tasks:
     file: quay.yaml
 
-- name: Install Packages
-  ansible.builtin.dnf:
-    state: latest
-    name:
-      - osbuild-composer
-      - composer-cli
-      - cockpit-composer
-      - bash-completion
-      - genisoimage
-      - httpd
-      - syslinux
-    update_cache: yes
-
 - name: Enable Cockpit/Composer/Apache
   ansible.builtin.systemd:
     state: started
@@ -24,3 +11,9 @@
     - osbuild-composer.socket
     - cockpit.socket
     - httpd.service
+
+- name: Set Root Password
+  ansible.builtin.user:
+    name: root
+    password: "{{ hib_root_password | password_hash('sha512') }}"
+    update_password: always
