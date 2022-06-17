@@ -20,5 +20,107 @@
   ansible.builtin.shell: |
     {{ mirror_registry_tmp | quote }}/mirror-registry install \
       --quayHostname $(hostname -f) \
-      --initUser {{ quay_username | quote }} \
-      --initPassword {{ quay_password | quote }} -v
+      --initUser {{ quay_rfe_username | quote }} \
+      --initPassword {{ quay_rfe_password | quote }} -v
+    
+- name: Setup Facts
+  ansible.builtin.set_fact:
+    quay_route: "https://{{ hostvars[hib_name].ansible_ssh_host }}:8443"
+    quay_organization: rfe-demo
+    quay_rfe_organization: rfe-org
+    quay_rfe_repository_description: Repoistory Hosting RFE Container Images
+    quay_rfe_repository_name: rfe-images
+    quay_rfe_robot_description: Account to Publish RFE Container Images
+    quay_rfe_robot_name: publisher
+    
+- name: Wait for Quay API
+  ansible.builtin.uri:
+    method: GET
+    url: "{{ quay_route }}/health/instance"
+    validate_certs: no
+  register: quay_status
+  until:
+    - quay_status.status == 200
+    - quay_status.json.data.services is defined
+    - quay_status.json.data.services | dict2items | rejectattr('value', 'equalto', True) | list | count == 0
+  delay: 10
+  retries: 60
+
+- name: Create RFE Repository
+  vars:
+    quay_api_body:
+      description: "{{ quay_rfe_repository_description }}"
+      namespace: "{{ quay_rfe_username }}"
+      repo_kind: image
+      repository: "{{ quay_rfe_repository_name }}"
+      visibility: private
+    quay_api_status_codes:
+      - 201
+      - 400
+    quay_api_uri:
+      "/api/v1/repository"
+    quay_api_verb: POST
+  ansible.builtin.include_role:
+    name: quay-raw-api
+
+- name: "Check for Failure Conditions for Task: Create RFE Repository"
+  ansible.builtin.fail:
+    msg: "Create RFE Repository Failed"
+  when:
+    - quay_api_response.status != 201
+    - '"Repository already exists" not in quay_api_response.json.error_message'
+
+- name: Query RFE Robot Account
+  vars:
+    quay_api_body: ""
+    quay_api_status_codes:
+      - 200
+      - 400
+    quay_api_uri: "/api/v1/user/robots/{{ quay_rfe_robot_name }}"
+    quay_api_verb: GET
+  ansible.builtin.include_role:
+    name: quay-raw-api
+
+- name: "Check for Failure Conditions for Task: Query RFE Robot Account"
+  ansible.builtin.fail:
+    msg: "Create RFE Robot Account Failed"
+  when:
+    - quay_api_response.status != 200
+    - '"Could not find robot with specified username" not in quay_api_response.json.message'
+
+- name: Create RFE Robot Account if Missing
+  vars:
+    quay_api_body:
+      description: "{{ quay_rfe_robot_description | default('') }}"
+    quay_api_status_codes:
+      - 201
+    quay_api_uri: "/api/v1/user/robots/{{ quay_rfe_robot_name }}"
+    quay_api_verb: PUT
+  ansible.builtin.include_role:
+    name: quay-raw-api
+  when:
+    - quay_api_response.status != 200
+
+- name: Create/Update RFE Robot Secret
+  ansible.builtin.copy:
+    content: |
+      {
+        "auths": {
+          "{{ quay_route | regex_replace('https://') }}": {
+            "auth": "{{ (quay_api_response.json.name + ':' + quay_api_response.json.token) | b64encode }}"
+          }
+        }
+      }
+    dest: /root/quay-credentials
+  delegate_to: "{{ hib_name }}"
+
+- name: Add RFE Robot Account Permissions to RFE Repository
+  vars:
+    quay_api_body:
+      role: write
+    quay_api_status_codes:
+      - 200
+    quay_api_uri: "/api/v1/repository/{{ quay_rfe_username }}/{{ quay_rfe_repository_name }}/permissions/user/{{ quay_rfe_username }}+{{ quay_rfe_robot_name }}"
+    quay_api_verb: PUT
+  ansible.builtin.include_role:
+    name: quay-raw-api

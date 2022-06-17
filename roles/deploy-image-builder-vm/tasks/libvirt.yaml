@@ -1,5 +1,4 @@
 # For some reason resizing via HIB doesn't work!?
-
 - name: Create Larger qcow2 Disk
   ansible.builtin.command:
     argv:
@@ -9,7 +8,7 @@
       - "qcow2"
       - "-o"
       - "preallocation=metadata"
-      - "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
+      - "{{ hib_libvirt_disk_path | quote }}/{{ hib_name | quote }}.qcow2"
       - "{{ hib_root_filesystem_size }}G"
   tags:
     - setup
@@ -19,18 +18,23 @@
     argv:
       - "virt-resize"
       - "--expand"
-      - "/dev/sda3"
-      - "/tmp/{{ hib_name }}.qcow2"
-      - "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
+      - "/dev/sda4"
+      - "/tmp/{{ hib_name | quote }}.qcow2"
+      - "{{ hib_libvirt_disk_path | quote }}/{{ hib_name | quote }}.qcow2"
   tags:
     - setup
 
-- name: Set Root Password
+- name: Configure Image
   ansible.builtin.command:
     argv:
       - "virt-customize"
       - "-a"
-      - "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
+      - "{{ hib_libvirt_disk_path | quote }}/{{ hib_name | quote }}.qcow2"
+      - "--uninstall"
+      - "cloud-init"
+      - "--selinux-relabel"
+      - "--ssh-inject"
+      - "root:file:{{ hib_libvirt_ssh_public_key_path | quote }}"
       - "--root-password"
       - "password:{{ hib_root_password }}"
   tags:

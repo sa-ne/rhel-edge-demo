@@ -1,20 +1,16 @@
-- name: Destroy Image Builder VM
-  community.libvirt.virt:
-    name: "{{ hib_name }}"
-    state: destroyed
-  tags:
-    - virt
+- name: Assert Variables are Defined
+  ansible.builtin.assert:
+    that:
+      - platform is defined
 
-- name: Delete Image Builder VM
-  community.libvirt.virt:
-    command: undefine
-    name: "{{ hib_name }}"
-  tags:
-    - virt
+- name: Destroy using KVM
+  ansible.builtin.include_tasks:
+    file: libvirt.yaml
+  when:
+    - platform == "libvirt"
 
-- name: Delete Image Builder VM Disk
-  ansible.builtin.file:
-    path: "{{ hib_libvirt_disk_path }}/{{ hib_name }}.qcow2"
-    state: absent
-  tags:
-    - disk
+- name: Destroy using AWS
+  ansible.builtin.include_tasks:
+    file: aws.yaml
+  when:
+    - platform == "aws"

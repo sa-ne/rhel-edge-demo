@@ -14,3 +14,10 @@
     file: aws.yaml
   when:
     - platform == "aws"
+
+- name: Wait for Host
+  ansible.builtin.wait_for:
+    host: "{{ hostvars[hib_name].ansible_ssh_host }}"
+    port: 22
+  when:
+    - imi_wait_for_host is defined

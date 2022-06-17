@@ -1,5 +1,5 @@
 - name: Query VM Definition for MAC Address
-  become: yes
+  become: true
   community.general.xml:
     content: attribute
     path: "/etc/libvirt/qemu/{{ hib_name | quote }}.xml"
@@ -11,6 +11,14 @@
     var: xml_results
     verbosity: 1
 
+- name: Wait for MAC to Appear in Lease File
+  ansible.builtin.shell:
+    cmd: "cat {{ hib_libvirt_lease_file | quote }}"
+  register: lease_file
+  until: "lease_file.stdout.find('{{ xml_results.matches[0].mac.address }}') != -1"
+  retries: 10
+  delay: 5
+
 - name: Add Image Builder to IMI
   ansible.builtin.add_host:
     ansible_ssh_host: "{{ lookup('file', hib_libvirt_lease_file) | from_json | json_query(jmes_query) | first }}"
@@ -18,10 +26,3 @@
     name: "{{ hib_name }}"
   vars:
     jmes_query: '[?("mac-address"==''{{ xml_results.matches[0].mac.address }}'')]."ip-address"'
-
-- name: Wait for Host
-  ansible.builtin.wait_for:
-    host: "{{ hostvars[hib_name].ansible_ssh_host }}"
-    port: 22
-  when:
-    - imi_wait_for_host is defined

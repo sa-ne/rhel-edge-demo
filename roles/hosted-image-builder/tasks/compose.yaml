@@ -16,9 +16,17 @@
     url: "{{ redhat_sso_url }}"
   register: access_token_results
 
-- name: Render Compose Payload
+- name: Render Compose Payload (libvirt)
   ansible.builtin.set_fact:
     compose_payload: "{{ lookup('template', 'image-builder-payload-libvirt.json.j2') }}"
+  when:
+    - platform == "libvirt"
+
+- name: Render Compose Payload (aws)
+  ansible.builtin.set_fact:
+    compose_payload: "{{ lookup('template', 'image-builder-payload-aws.json.j2') }}"
+  when:
+    - platform == "aws"
 
 - name: Debug Variable compose_payload
   ansible.builtin.debug:

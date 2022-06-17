@@ -1,6 +1,9 @@
 - name: Delete Demo
   become: yes
+  gather_facts: no
   hosts: localhost
+  vars_files:
+    - vars/config.yaml
   tasks:
     - name: Delete VMs
       ansible.builtin.include_role:

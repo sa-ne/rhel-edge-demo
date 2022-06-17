@@ -1,12 +1,14 @@
 - name: Compose Image Builder Instance
+  gather_facts: yes
   hosts: localhost
+  vars_files:
+    - vars/config.yaml
   tasks:
     - name: Initiate Compose
       ansible.builtin.include_role:
         name: hosted-image-builder
       vars:
         action: compose
-        hib_root_filesystem_size: 25
 
     - name: Wait for Compose to Complete
       ansible.builtin.include_role:

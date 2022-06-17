@@ -1,24 +1,26 @@
 - name: Deploy Image Builder Instance
   become: yes
+  gather_facts: no
   hosts: localhost
+  vars_files:
+    - vars/config.yaml
   tasks:
     - name: Deploy Instance
       ansible.builtin.include_role:
         name: deploy-image-builder-vm
-      vars:
-        hib_root_filesystem_size: 25
-        platform: libvirt
 
     - name: Create IMI
       ansible.builtin.include_role:
         name: image-builder-imi
       vars:
-        platform: libvirt
         imi_wait_for_host: yes
 
 - name: Configure Image Builder Instance
   become: yes
+  gather_facts: no
   hosts: "{{ hib_name }}"
+  vars_files:
+    - vars/config.yaml
   tasks:
     - name: Configure Image Builder
       ansible.builtin.include_role:

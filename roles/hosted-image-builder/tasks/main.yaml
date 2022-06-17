@@ -20,3 +20,4 @@
     file: download.yaml
   when:
     - action == "download"
+    - platform == "libvirt"

@@ -1,0 +1,32 @@
+- name: Query EC2 Instances
+  amazon.aws.ec2_instance_info:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"  
+    filters:
+      instance-state-name:
+        - running
+        - stopped
+      "tag:Name": "{{ hib_name }}"
+      "tag:DemoName": "rhel-edge-demo"
+    region: "{{ hib_aws_region }}"
+  failed_when:
+    - (ec2_instance_info_results.instances | default([]) | count) != 1
+  register: ec2_instance_info_results
+
+- name: Destroy Image Builder in EC2
+  amazon.aws.ec2_instance:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    instance_ids:
+      - "{{ ec2_instance_info_results.instances[0].instance_id }}"
+    instance_type: "{{ hib_aws_instance_type }}"
+    region: "{{ hib_aws_region }}"
+    state: terminated
+
+- name: Destroy Security Group
+  amazon.aws.ec2_group:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    group_id: "{{ ec2_instance_info_results.instances[0].security_groups[0].group_id }}"
+    region: "{{ hib_aws_region }}"
+    state: absent
