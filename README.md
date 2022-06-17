@@ -46,7 +46,7 @@ Next we will need to create an Ansible vault with some variables:
 |Variable|Required|Description|
 |:---|:---|:---|
 |activation_key|Yes|Activation key used to register the system. Create one [here](https://access.redhat.com/management/activation_keys).|
-|activation_key_org|Yes|Organization ID tied to activation key. This can be found at the top of (Activation Keys)[https://access.redhat.com/management/activation_keys] section on the customer portal.|
+|activation_key_org|Yes|Organization ID tied to activation key. This can be found at the top of [Activation Keys](https://access.redhat.com/management/activation_keys) section on the customer portal.|
 |aws_access_key|AWS Only|Access key for IAM user.|
 |aws_secret_key|AWS Only|Secret key for IAM user.|
 |hib_aws_account_id|AWS Only|AWS Account ID.|
@@ -57,7 +57,7 @@ Next we will need to create an Ansible vault with some variables:
 |hib_root_password|Yes|Root password for the Image Builder VM.|
 |quay_rfe_password|Yes|Password for the Quay admin account.|
 |quay_rfe_username|Yes|Username for the Quay admin account.|
-|redhat_api_offline_token|Yes|Token used to authenticate with Red Hat APIs in the Hybrid Cloud Console. Generate one (here)[https://access.redhat.com/management/api].|
+|redhat_api_offline_token|Yes|Token used to authenticate with Red Hat APIs in the Hybrid Cloud Console. Generate one [here](https://access.redhat.com/management/api).|
 
 ### Create Ansible Vault
 
@@ -120,35 +120,45 @@ Several variables to control the deployment are included in `vars/config.yaml`.
 
 For the most part the default values in `vars/config.yaml` can be used. Just be sure to adjust the `platform` and set it to either `aws` or `libvirt`.
 
-## Compose and Download Image Builder VM for KVM
+## Compose Image Builder VM
 
-This playbook will compose and download a RHEL 8.6 qcow2 image with Image Builder preinstalled. The following default values are used (these can be overwritten on the command line):
+This playbook will compose a RHEL 9 image with Image Builder, Quay and other tooling preinstalled. If the `platform` variable is set to `aws` the hosted Image Builder service will share the AMI privately with your AWS account. For `libvirt` based deployments, the playbook will download the generated QCOW2 image locally in your temp directory.
 
-```yaml
-hib_name: rhel86-image-builder
-hib_root_filesystem_size: 25
-```
-
-|Variable|Description|
-|:---|:---|
-|hib_name|Name of the compose as well as the name of the deployed Image Builder VM.|
-|hib_root_filesystem_size|Size of the Image Builder VM root filesystem in Gigabytes (GB).|
-
-We will also need to include the variables defined in our vault. To run the playbook, execute the following:
+Run the playbook as follows:
 
 ```shell
 ansible-playbook \
   --ask-vault-pass \
   -e @local/vault.yaml \
-  -e hib_name=image-builder-demo \
-  -e hib_root_filesystem_size=50 \
   01-compose-image-builder.yaml
 ```
 
-This example overrides the `hib_name` default and changes the value to `image-builder-demo`. It also overrides `hib_root_filesystem_size` to be 50G.
-
 *_NOTE: The compose process takes about 15 minutes to complete._*
 
-# Deploy Image Builder VM for KVM
+## Deploy Image Builder VM
 
-This playbook will deploy/configure an Image Builder VM on your local machine.
+This playbook will deploy/configure the Image Builder VM. If `platform` is set to `aws` a Security Group and EC2 Instance will get created. For `libvirt` based deployments the playbooks will leverage `virt-customize` to modify the image. With either platform selected, after the Image Builder instance comes up the playbooks will configure and enable services and deploy Quay.
+
+We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. For AWS based deployments, the user will be `ec2-user`. For libvirt based deployments, the user will be root. In either case, the public SSH key defined in `vars/config.yaml` will be used to authenticate.
+
+Run the playbook as follows:
+
+```shell
+ansible-playbook \
+  --ask-vault-pass \
+  -e @local/vault.yaml \
+  -u root \
+  --private-key /home/chris/.ssh/id_rsa.pub \
+  02-deploy-and-configure-image-builder.yaml
+```
+
+## Cleanup
+
+To remove the Image Builder instance, run the following playbook:
+
+```shell
+ansible-playbook \
+  --ask-vault-pass
+  -e @local/vault.yaml \
+  05-delete-demo.yaml
+```
