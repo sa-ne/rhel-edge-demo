@@ -133,13 +133,15 @@ ansible-playbook \
   01-compose-image-builder.yaml
 ```
 
+For AWS specific composes, the AMI id will be outputted to the playbook results. The ID will also be saved in /tmp with the format `<hib_name>-<timestamp>-ami-id`.
+
 *_NOTE: The compose process takes about 15 minutes to complete._*
 
 ## Deploy Image Builder VM
 
 This playbook will deploy/configure the Image Builder VM. If `platform` is set to `aws` a Security Group and EC2 Instance will get created. For `libvirt` based deployments the playbooks will leverage `virt-customize` to modify the image. With either platform selected, after the Image Builder instance comes up the playbooks will configure and enable services and deploy Quay.
 
-We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. For AWS based deployments, the user will be `ec2-user`. For libvirt based deployments, the user will be root. In either case, the public SSH key defined in `vars/config.yaml` will be used to authenticate.
+We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. For AWS based deployments, the user will be `ec2-user`. Additionally, you will need to pass the `hib_aws_ami` variable. For libvirt based deployments, the user will be root. In either case, the public SSH key defined in `vars/config.yaml` will be used to authenticate.
 
 Run the playbook as follows:
 
