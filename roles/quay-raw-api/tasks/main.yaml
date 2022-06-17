@@ -55,4 +55,3 @@
     url: "{{ quay_route + quay_api_uri }}"
     validate_certs: no
   register: quay_api_response
-  

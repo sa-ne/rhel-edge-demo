@@ -17,3 +17,5 @@
     name: root
     password: "{{ hib_root_password | password_hash('sha512') }}"
     update_password: always
+  when:
+    - platform == "aws"

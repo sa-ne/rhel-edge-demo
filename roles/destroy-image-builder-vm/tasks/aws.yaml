@@ -13,15 +13,6 @@
     - (ec2_instance_info_results.instances | default([]) | count) != 1
   register: ec2_instance_info_results
 
-# - debug:
-#     msg: "{{ ec2_instance_info_results.instances[0].instance_id }}"
-
-# - debug:
-#     msg: "{{ ec2_instance_info_results.instances[0].security_groups[0].group_id }}"
-
-# - fail:
-#     msg: stop
-
 - name: Destroy Image Builder in EC2
   amazon.aws.ec2_instance:
     aws_access_key: "{{ aws_access_key }}"
