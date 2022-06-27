@@ -1,10 +1,9 @@
 # RHEL for Edge Demo
 
-This repository contains a set of playbooks you can use to build out the infrastructure to run a RHEL for Edge demo. The playbooks will enable you to:
+This repository contains a set of playbooks you can use to build out the infrastructure to run a RHEL for Edge (RFE) demo. The playbooks will enable you to:
 
 * Leverage the hosted Image Builder on [console.redhat.com](https://console.redhat.com/insights/image-builder) to build a RHEL 9 VM with Image Builder pre-installed.
-* Download Image Builder VM and deploy using KVM (or share an AMI with an AWS account)
-* Start and configure Image Builder VM
+* Deploy Image Builder VM on KVM or AWS
 * Deploy Quay on Image Builder VM to host RHEL for Edge (RFE) OSTree containers.
 
 The following use cases are highlighted:
@@ -18,20 +17,26 @@ The following use cases are highlighted:
 * Use Ansible to modify RFE guests.
 * Test Greenboot with RFE guests.
 
+## Architecture
+
+All of the components to build and manage RFE content (including Image Builder, Quay and Apache) are hosted on a RHEL 9 virtual machine. The playbooks support the deployment of this virtual machine on AWS or locally using KVM. The RFE deployments in this demo are ISO based and require KVM.
+
+![Architecture](/images/architecture.png)
+
 ## Requirements
 
 To leverage the automation in this demo you need to bring the following:
 
 RHEL/Fedora KVM host with at least 4 vCPUs, 16GB RAM and 40G of available storage. We will also need the following packages installed:
 
-* ansible
+* ansible (tested on 2.12.6)
 * guestfs-tools
 * python3-botocore
 * python3-boto3
 
 ### Simple Content Access
 
-You will also need to make sure the Simple content access for Red Hat Subscription Management feature is enable in the customer portal [here](https://access.redhat.com/management).
+You will also need to make sure the Simple content access for Red Hat Subscription Management feature is enabled in the customer portal [here](https://access.redhat.com/management).
 
 ## Prerequisites
 
