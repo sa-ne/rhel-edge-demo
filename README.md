@@ -19,7 +19,7 @@ The following use cases are highlighted:
 
 ## Architecture
 
-All of the components to build and manage RFE content (including Image Builder, Quay and Apache) are hosted on a RHEL 9 virtual machine. The playbooks support the deployment of this virtual machine on AWS or locally using KVM. The RFE deployments in this demo are ISO based and require KVM.
+For this demo, all of the components to build and manage RFE content (including Image Builder, Quay and Apache) are hosted on a single RHEL 9 virtual machine. The playbooks support the deployment of this virtual machine on AWS or locally using KVM. The RFE deployments in this demo are ISO based and require KVM.
 
 ![Architecture](/images/architecture.png)
 
@@ -50,7 +50,7 @@ Before beginning, you will need to clone this git repository as follows:
 git clone https://github.com/sa-ne/rhel-edge-demo.git
 ```
 
-The configuration options for the deployment are stored in two files and differ slightly depending on the platform you are targeting (either KVM or AWS). Sensitive variables (keys, credentials, etc.) are stored in an Ansible vault and more general configuration options are stored in a variables file. See below for additional details.
+The configuration options for the deployment are stored in two files and differ slightly depending on the platform you are targeting (either KVM or AWS). Sensitive variables (keys, credentials, etc.) are stored in an Ansible vault (`local/vault.yaml`) and more general configuration options are stored in a variables file (`vars/config.yaml`). See below for additional details.
 
 ### Install Required Collections
 
@@ -93,7 +93,9 @@ redhat_api_offline_token: |-
 
 ## Deploying Image Builder on KVM
 
-These playbooks assume KVM is running _locally_ (i.e. the virtual machine will be deployed to localhost).
+At a high level, the deployment of Image Builder on KVM is broken into two steps. First, a playbook (`01-compose-image-builder.yaml`) is run to render a customized RHEL 9 image using the hosted Image Builder API. Once the compose completes (typically takes 15 minutes), the resulting QCOW2 image is downloaded locally to `/tmp`. Next, a second playbook (`02-deploy-and-configure-image-builder.yaml`) is used to further customize the QCOW2 image using `virt-customize` (resize disk, set root password and SSH key, etc.) and deploy the VM.
+
+Also, these playbooks assume KVM is running _locally_ (i.e. the virtual machine will be deployed to localhost).
 
 ### Compose Image Builder VM for KVM
 
@@ -116,7 +118,7 @@ redhat_api_offline_token: |-
   <long string>
 ```
 
-For `vars/config.yaml`, make sure the following variables are updated as necessary. Generally speaking, the default vaules should apply.
+For `vars/config.yaml`, make sure the following variables are updated as necessary. Generally speaking, the default values can be used. Just ensure the `platform` variable is set to `libvirt`.
 
 |Variable|Description|
 |:---|:---|
@@ -153,19 +155,21 @@ ansible-playbook \
   01-compose-image-builder.yaml
 ```
 
-### Deploy Image Builder VM on KVM
-
-For AWS specific composes, the AMI id will be outputted to the playbook results. The ID will also be saved in /tmp with the format `<hib_name>-<timestamp>-ami-id`.
-
 *_NOTE: The compose process takes about 15 minutes to complete._*
 
-## Deploy Image Builder VM
+Once the compose completes the resulting QCOW2 ismage is downloaded locally and stored in `/tmp/<hib_name>.qcow2`. For reference, after the compose completes the compose id will be stored in `/tmp/<hib_name>-<timestamp>-compose-id`.
 
-This playbook will deploy/configure the Image Builder VM. If `platform` is set to `aws` a Security Group and EC2 Instance will get created. For `libvirt` based deployments the playbooks will leverage `virt-customize` to modify the image. With either platform selected, after the Image Builder instance comes up the playbooks will configure and enable services and deploy Quay.
+### Deploy Image Builder VM on KVM
 
-We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. For AWS based deployments, the user will be `ec2-user`. Additionally, you will need to pass the `hib_aws_ami` variable. For libvirt based deployments, the user will be root. In either case, the public SSH key defined in `vars/config.yaml` will be used to authenticate.
+The playbook to deploy the downloaded QCOW2 image is broken into three phases:
 
-Run the playbook as follows:
+* Customize QCOW2 image further using `virt-customize`.
+* Create/start VM using customized QCOW2 image.
+* Use Ansible to configure running VM.
+
+We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. The playbooks will login using the root user and authenticate with SSH keys.
+
+Run the playbooks as follows:
 
 ```shell
 ansible-playbook \
@@ -176,7 +180,16 @@ ansible-playbook \
   02-deploy-and-configure-image-builder.yaml
 ```
 
-## Deploying Image Builder on KVM
+To view the IP address of the running VM, use the following command (in this example, the name of the VM [`hib_name`] is `rhel90-image-builder`).
+
+```shell
+$ sudo virsh domifaddr rhel90-image-builder
+ Name       MAC address          Protocol     Address
+--------------------------------------------------------------
+ vnet0      52:54:00:ea:0e:27    ipv4         192.168.122.3/24
+```
+
+## Deploying Image Builder on AWS
 
 ### Compose Image Builder VM for AWS
 
