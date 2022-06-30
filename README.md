@@ -4,7 +4,7 @@ This repository contains a set of playbooks you can use to build out the infrast
 
 * Leverage the hosted Image Builder on [console.redhat.com](https://console.redhat.com/insights/image-builder) to build a RHEL 9 VM with Image Builder pre-installed.
 * Deploy Image Builder VM on KVM or AWS
-* Configure Quay and Apache on Image Builder VM to host RHEL for Edge (RFE) OSTree containers.
+* Configure Quay and Apache on Image Builder VM to host RHEL for Edge (RFE) OSTree containers and content.
 
 The following use cases are highlighted:
 
@@ -272,7 +272,7 @@ ansible-playbook \
 
 Once the compose completes the resulting AMI image shared privately with your AWS account. For reference, after the compose completes the compose id and AMI id will be stored in `/tmp/<hib_name>-<timestamp>-compose-id` and `/tmp/<hib_name>-<timestamp>-ami-id`, respectively.
 
-### Deploy Image Builder VM on KVM
+### Deploy Image Builder VM on AWS
 
 The playbook to deploy the shared AMI image is broken into three phases:
 
@@ -280,7 +280,7 @@ The playbook to deploy the shared AMI image is broken into three phases:
 * Deploy EC2 instance using privately shared AMI.
 * Use Ansible to configure running EC2 instance.
 
-We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. The playbooks will login using the `ec2-user` user and authenticate with SSH keys. Be sure the private SSH key corresponds to the public SSH key stored in EC2.
+We will need to pass credentials for the Image Builder instance to the `ansible-playbook` command. The playbooks will login using the `ec2-user` user and authenticate with SSH keys. Be sure the private SSH key corresponds to the public SSH key stored in EC2. Finally, we will need to tell the playbooks which AMI to use. This is done by passing the `hib_aws_ami` extra variable (see `/tmp/<hib_name>-<timestamp>-ami-id` after running the `01-compose-image-builder.yaml` playbook).
 
 Run the playbooks as follows:
 
@@ -288,8 +288,9 @@ Run the playbooks as follows:
 ansible-playbook \
   --ask-vault-pass \
   -e @local/vault.yaml \
+  -e hib_aws_ami=ami-12345313378b7a25a \
   -u ec2-user \
-  --private-key /home/chris/.ssh/id_rsa.pub \
+  --private-key /home/chris/.ssh/id_rsa \
   02-deploy-and-configure-image-builder.yaml
 ```
 
