@@ -133,7 +133,7 @@ For `vars/config.yaml`, make sure the following variables are updated as necessa
 |hib_libvirt_qemu_path|Path to QEMU configuration.|
 |platform|Target platform for Image Builder deployment.|
 
-When finished, the variables in `vars/config.yaml should look similar to the following:
+When finished, the variables in `vars/config.yaml` should look similar to the following:
 
 ```yaml
 hib_libvirt_disk_path: /var/lib/libvirt/images
